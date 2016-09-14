@@ -1,0 +1,6 @@
+.babelrc
+.idea/
+src/
+test/
+!lib/
+npm-debug.log

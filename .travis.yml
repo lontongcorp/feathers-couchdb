@@ -1,0 +1,8 @@
+language: node_js
+services: couchdb
+node_js:
+  - "6"
+  - "4.4"
+  - "node"
+  - "iojs"
+sudo: false
