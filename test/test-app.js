@@ -18,9 +18,9 @@ const app = feathers()
   .use(bodyParser.urlencoded({extended: true}));
 
 export default new Promise(function(resolve) {
-    var conn = new(Connection)();
+    const conn = new(Connection)();
 
-    var opts = {
+    const opts = {
       connection: conn,
       Model: 'tests',
       paginate: {
@@ -37,7 +37,7 @@ export default new Promise(function(resolve) {
     // Start the server
     var server = app.listen(3000);
     server.on('listening', function() {
-      console.log('Feathers Message CouchDB service running on 127.0.0.1:3030');
+      console.log('Feathers Message CouchDB service running on 127.0.0.1:3000');
       resolve(server);
     });
 });

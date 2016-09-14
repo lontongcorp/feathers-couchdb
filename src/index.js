@@ -1,6 +1,5 @@
 import Proto from 'uberproto';
 import filter from 'feathers-query-filters';
-import errors from 'feathers-errors';
 import errorHandler from './error-handler';
 
 // Create the service.
@@ -43,12 +42,17 @@ class Service {
     return new Promise((resolve,reject) => {
       //check or create new database if not exist
       db.exists(function (err, exists) {
-        if (err) return reject(err);
+        if (err) {
+            return reject(err);
+        }
 
-        if (exists) resolve(db);
-        else {
+        if (exists) {
+            resolve(db);
+        } else {
             db.create((err) => {
-                if (err) return reject(err);
+                if (err) {
+                    return reject(err);
+                }
 
                 //db.maxRevisions(1);
                 resolve(db);
@@ -87,8 +91,11 @@ class Service {
           for (var k in query) {
               let repl = COMPAT[METHOD.indexOf(k)];
               let qb = `doc.${id}${repl}${query[k]}`;
-              if (k === '$in') qb = `RegExp('${query[k].join('|')}','gi').test(doc.${id})`;
-              else if (k === '$nin') qb = `!RegExp('${query[k].join('|')}','gi').test(doc.${id})`;
+              if (k === '$in') {
+                  qb = `RegExp('${query[k].join('|')}','gi').test(doc.${id})`;
+              } else if (k === '$nin') {
+                  qb = `!RegExp('${query[k].join('|')}','gi').test(doc.${id})`;
+              }
               arr += ' && ' + qb;
           }
 
@@ -122,12 +129,13 @@ class Service {
           emit(null, ${fields});
       }`;
 
+      /*jshint evil: true */
       const fn = new Function('doc', fnBody);
 
       const FntoString = fn.toString().replace(fn.name,'');
       fn.toString = () => {
           return FntoString.replace(/\r?\n|\r|\/\*\*\/|  /gi,'');
-      }
+      };
 
       return fn;
   }
@@ -159,7 +167,9 @@ class Service {
                 };
 
                 let promisify = (err, res) => {
-                  if (err) return reject(err);
+                  if (err) {
+                      return reject(err);
+                  }
 
                   for (let i=0,N=res.length; i<N; i++) {
                       res[i] = res[i].value;
@@ -175,7 +185,7 @@ class Service {
                           }
                           res[i] = tmpData;
                       }
-                  };
+                  }
 
                   resolve({
                     total: res.length,
@@ -185,7 +195,9 @@ class Service {
                   });
                 };
 
-                if (q) return db.view(q, opts, promisify);
+                if (q) {
+                    return db.view(q, opts, promisify);
+                }
 
                 const viewFn = self._createTempView(filters, query);
                 db.temporaryView({
@@ -198,7 +210,7 @@ class Service {
                             views: {
                                 temp: {  map: viewFn }
                             }
-                        }).then(result => {
+                        }).then(() => {
                             // execute
                             db.view('feathers/temp', opts, (err,res)=>{
                                 //delete this design docs
@@ -206,18 +218,22 @@ class Service {
                                 promisify(err,res);
                             });
                         }).catch(err=>reject(err));
-                    } else promisify(err,res);
+                    } else {
+                        promisify(err,res);
+                    }
                 });
               });
             })
             .catch(errorHandler);
   }
 
-  _get(id, params) {
+  _get(id) {
     return  this.db.then(db => {
               return new Promise((resolve,reject) => {
                 db.get(id, (err, res) => {
-                    if (err) return reject(err);
+                    if (err) {
+                        return reject(err);
+                    }
 
                     resolve(res);
                 });
@@ -249,33 +265,39 @@ class Service {
         }
         entry = Object.assign({}, data);
 
-        if (_id && _id.startsWith('_design/')) _id = _id.toLowerCase();
+        if (_id && _id.startsWith('_design/')) {
+            _id = _id.toLowerCase();
+        }
     }
 
     return  this.db.then(db => {
               return new Promise((resolve,reject) => {
                 const promisify = (err, res) => {
-                    if (err) return reject(err);
+                    if (err) {
+                        return reject(err);
+                    }
 
                     resolve(res);
                 };
-                if (_id) db.save(_id, entry, promisify);
-                else db.save(entry, promisify);
+                _id ? db.save(_id, entry, promisify) : db.save(entry, promisify);
+
               });
             })
             .catch(errorHandler);
   }
 
-  patch(id, data, params) {
+  patch(id, data) {
       return this.db.then(db => {
         return new Promise((resolve,reject) => {
-            if (data.id) delete data.id;
-            if (data._id) delete data._id;
+            if (data.id) { delete data.id; }
+            if (data._id) { delete data._id; }
 
             let entry = Object.assign({}, data);
 
             db.merge(id, entry, (err, res) => {
-                if (err) return reject(err);
+                if (err) {
+                    return reject(err);
+                }
 
                 resolve(res);
             });
@@ -292,7 +314,7 @@ class Service {
     let promises = new Array(data.length);
     for (let i = 0, N = data.length; i < N; i++) {
         promises[i] = this.patch(data[i]._id||data[i].id, data[i], params);
-    };
+    }
 
     return Promise.all(promises).catch(errorHandler);
   }
@@ -304,12 +326,16 @@ class Service {
         promise = this._get(id).then(doc => {
             params.rev = doc.rev || doc._rev;
         });
-    } else promise = this.db;
+    } else {
+        promise = this.db;
+    }
 
     return promise.then(db => {
             return new Promise((resolve,reject) => {
               db.remove(id, params.rev || params._rev, (err, res) => {
-                if (err) return reject(err);
+                if (err) {
+                    return reject(err);
+                }
 
                 resolve(res);
               });
