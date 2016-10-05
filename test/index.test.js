@@ -16,7 +16,7 @@ describe('Feathers CouchDB Service', () => {
       app.use('/tests', service({ Model: 'tests', connection:conn }));
   });
 
-  after( ()=> db.then( db => db.destroy()).catch(()=> this.db.destroy()) );
+  //after( ()=> db.then( db => db.destroy()).catch(()=> this.db.destroy()) );
 
   it('is CommonJS compatible', () =>
     expect(typeof require('../lib')).to.equal('function')
