@@ -1,6 +1,11 @@
 .babelrc
+.editorconfig
+.gitignore
+.jshintrc
+.travis.yml
 .idea/
 src/
 test/
+example/
 !lib/
 npm-debug.log

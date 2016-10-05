@@ -22,7 +22,7 @@ Create CouchDB service like this:
 
 ```js
 var cradle = require('cradle');
-var service = require('feathers-cradle');
+var service = require('feathers-couchdb');
 
 var app = feathers();
 

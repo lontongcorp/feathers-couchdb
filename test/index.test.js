@@ -1,8 +1,6 @@
 import { expect } from 'chai';
-//import { base } from 'feathers-service-tests';
 import { Connection } from 'cradle';
 import feathers from 'feathers';
-//import errors from 'feathers-errors';
 import service from '../src';
 import server from './test-app';
 
@@ -18,13 +16,11 @@ describe('Feathers CouchDB Service', () => {
       app.use('/tests', service({ Model: 'tests', connection:conn }));
   });
 
-  after(() => db.then( db => db.destroy()) );
+  after( ()=> db.then( db => db.destroy()).catch(()=> this.db.destroy()) );
 
   it('is CommonJS compatible', () =>
     expect(typeof require('../lib')).to.equal('function')
   );
-
-  //base(app, errors, 'tests', '_id');
 
   describe('Initialization', () => {
     describe('when missing options', () => {
@@ -63,8 +59,6 @@ describe('Feathers CouchDB Service', () => {
     after(done => {
       server.then(s => s.close(() => done()));
     });
-
-    //example('_id');
   });
 
 });
