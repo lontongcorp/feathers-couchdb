@@ -40,7 +40,7 @@ var Connection = new(cradle.Connection)(
 );
 
 var opts = {
-  cradle: Connection,
+  connection: Connection,
   Model: 'messages'
 };
 
@@ -108,7 +108,7 @@ To query data, simply FIND to `_design` document giving its namespace as param `
 
 can also add other params as well `$skip`, `$limit`, `$select`
 
-**NOTE** This plugin also provide *free, non-designed view* and try to create temporary view inside database. If `_temp_view` option is not available, like cloudant, this will create new view design and remove it immediately after.
+**NOTE** This plugin also provide *non-designed view* and try to create temporary view inside database. If `_temp_view` option is not available, like cloudant, this will create new view design and remove it immediately after.
 Please be aware this process slower than having saved design doc.
 
 ```js
@@ -137,7 +137,7 @@ body
 
 ###### Credits
 
-*Adapted from original works by FeathersJS team. I have no affiliate with them withsoever.*
+*Adapted from original works by FeathersJS team*
 
 
 ## License
