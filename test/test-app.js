@@ -29,7 +29,7 @@ export default new Promise(function(resolve) {
       }
     };
 
-    app.use(`/${opts.Model}`, service(opts));
+    app.service(opts.Model, service(opts));
 
     // A basic error handler, just like Express
     app.use(errorHandler());

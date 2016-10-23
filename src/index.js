@@ -2,7 +2,6 @@ import Proto from 'uberproto';
 import filter from 'feathers-query-filters';
 import errorHandler from './error-handler';
 
-// Create the service.
 class Service {
   constructor(options) {
     if (!options) {
@@ -28,19 +27,8 @@ class Service {
 
   database() {
     let db = this.connection.database(this.Model);
-    /*
-        .exists() : Check existence
-        .info(): Database information
-        .all(): Get all documents
-        .compact(): Compact database
-        .viewCleanup(): Cleanup old view data
-        .replicate(target, options): Replicate this database to target.
-        .maxRevisions(function(error, limit)): Get revision limit
-        .maxRevisions(rev, function(error, result)): Set revision limit
-     */
 
     return new Promise((resolve,reject) => {
-      //check or create new database if not exist
       db.exists(function (err, exists) {
         if (err) {
             return reject(err);
@@ -51,10 +39,13 @@ class Service {
         } else {
             db.create((err) => {
                 if (err) {
+                    if (err.name === 'CouchError' && err.error === 'file_exists') {
+                        return resolve(db);
+                    }
+                    
                     return reject(err);
                 }
 
-                //db.maxRevisions(1);
                 resolve(db);
             });
         }
@@ -103,10 +94,10 @@ class Service {
       }
   }
 
-  // avoid using temporaryView CouchDB, use predefined view, it's slower than walking snail!
+  // avoid using temporaryView CouchDB, use predefined view!
   _createTempView(filters, query) {
       const self = this;
-      //build query
+      //
       let fields = 'doc';
       if (filters.$select) {
           let obj = '_id: doc._id';
@@ -124,8 +115,8 @@ class Service {
         }(key,query[key]));
       }
 
-      let fnBody = `var cond = ${conditions};
-      if (cond) {
+      let fnBody = `
+      if (${conditions}) {
           emit(null, ${fields});
       }`;
 
@@ -134,22 +125,13 @@ class Service {
 
       const FntoString = fn.toString().replace(fn.name,'');
       fn.toString = () => {
-          return FntoString.replace(/\r?\n|\r|\/\*\*\/|  /gi,'');
+          return FntoString.replace(/\r?\n|\/\*\*\/|  /gim,'');
       };
 
       return fn;
   }
 
   find(params) {
-    /*
-        params.query:
-        $limit : limit result to X, respect paginate.max
-        $skip :  useful for page * paginate
-        $sort :  sort by [key]
-        $select[] : fields to be included
-        $populate : ???
-        "Key"="Value" : match the value of doc[key]
-    */
     const self = this;
     const paginate = (params && typeof params.paginate !== 'undefined') ?
       params.paginate : this.paginate;
@@ -161,7 +143,7 @@ class Service {
               return new Promise((resolve,reject) => {
 
                 const opts = {
-                  limit: filters.$limit || paginate.default,
+                  limit: filters.$limit || paginate.default || 100,
                   skip: filters.$skip || 0,
                   //descending: filters.$sort === 'desc'
                 };
@@ -173,13 +155,14 @@ class Service {
 
                   for (let i=0,N=res.length; i<N; i++) {
                       res[i] = res[i].value;
+                      res[i].id = res[i]._id;
+                      delete res[i]._id;
+                      delete res[i]._rev;
 
                       const arr = filters.$select;
                       if (arr && Array.isArray(arr) && arr.length>0) {
-                          let tmpData = {
-                              _id: res[i]._id,
-                              _rev: res[i]._rev
-                          };
+                          let tmpData = {};
+                          
                           for (let j=0,N=arr.length; j<N; j++) {
                               tmpData[arr[j]] = res[i][arr[j]];
                           }
@@ -187,12 +170,7 @@ class Service {
                       }
                   }
 
-                  resolve({
-                    total: res.length,
-                    limit: filters.$limit,
-                    skip: filters.$skip || 0,
-                    data: res
-                  });
+                  resolve(res);
                 };
 
                 if (q) {
@@ -202,22 +180,23 @@ class Service {
                 const viewFn = self._createTempView(filters, query);
                 db.temporaryView({
                     map: viewFn
-                }, opts, (err,res)=>{
+                }, (err,res)=>{
                     if (err) {
-                        //try to create new _design view (ie. Cloudant doesn't allow temporaryView)
-                        self.create({
-                            _id: '_design/feathers',
+                        // try to create new _design view
+                        // (ie. Cloudant doesn't allow temporaryView)
+                        db.save('_design/feathers', {
                             views: {
                                 temp: {  map: viewFn }
                             }
-                        }).then(() => {
-                            // execute
-                            db.view('feathers/temp', opts, (err,res)=>{
-                                //delete this design docs
-                                db.remove('_design/feathers');
-                                promisify(err,res);
+                        }, (err,obj) => {
+                            db.view('feathers/temp', opts, (err,res) => {
+                                if (err) {
+                                  return promisify(err, res);
+                                }
+                                
+                                db.remove('_design/feathers', obj.rev, err => promisify(err, res));
                             });
-                        }).catch(err=>reject(err));
+                        });
                     } else {
                         promisify(err,res);
                     }
@@ -242,7 +221,16 @@ class Service {
   }
 
   get(id, params) {
-    return  this._get(id,params).catch(errorHandler);
+    return  this._get(id,params)
+                .then(res=>{
+                  let obj = JSON.parse(JSON.stringify(res));
+                  obj.id = obj._id;
+                  delete obj._id;
+                  delete obj._rev;
+                  
+                  return obj;
+                })
+                .catch(errorHandler);
   }
 
   create(data) {
@@ -257,6 +245,7 @@ class Service {
             entry[i] = Object.assign({}, data[i]);
         }
     }
+    
     // single doc insert
     else {
         if (data._id || data.id) {
@@ -276,9 +265,11 @@ class Service {
                     if (err) {
                         return reject(err);
                     }
-
-                    resolve(res);
+                    
+                    entry.id = res.id;
+                    resolve(entry);
                 };
+                
                 _id ? db.save(_id, entry, promisify) : db.save(entry, promisify);
 
               });
@@ -287,6 +278,8 @@ class Service {
   }
 
   patch(id, data) {
+      const self = this;
+      
       return this.db.then(db => {
         return new Promise((resolve,reject) => {
             if (data.id) { delete data.id; }
@@ -294,12 +287,12 @@ class Service {
 
             let entry = Object.assign({}, data);
 
-            db.merge(id, entry, (err, res) => {
+            db.merge(id, entry, err => {
                 if (err) {
                     return reject(err);
                 }
 
-                resolve(res);
+                resolve(self.get(id));
             });
         });
       })

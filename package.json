@@ -1,7 +1,7 @@
 {
   "name": "feathers-couchdb",
   "description": "Feathers couchDB adapter service",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "homepage": "https://github.com/lontongcorp/feathers-couchdb",
   "repository": {
     "type": "git",

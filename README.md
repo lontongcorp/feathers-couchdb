@@ -44,7 +44,7 @@ var opts = {
   Model: 'messages'
 };
 
-app.use('/messages', service(opts));
+app.service('/messages', service(opts));
 ```
 
 This will create a `messages` endpoint and connect to a local `messages` database. Each model represents each database in CouchDB that will created automatically if not exist.

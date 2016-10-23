@@ -11,9 +11,9 @@ describe('Feathers CouchDB Service', () => {
 
   before(() => {
       conn = new(Connection)();
-      db = service({ Model: 'tests', connection:conn }).database();
+      db = service({ Model: 'tests', connection:conn });
 
-      app.use('/tests', service({ Model: 'tests', connection:conn }));
+      app.service('tests', service({ Model: 'tests', connection:conn }));
   });
 
   //after( ()=> db.then( db => db.destroy()).catch(()=> this.db.destroy()) );
@@ -22,7 +22,7 @@ describe('Feathers CouchDB Service', () => {
     expect(typeof require('../lib')).to.equal('function')
   );
 
-  describe('Initialization', () => {
+  describe('Initialization:', () => {
     describe('when missing options', () => {
       it('throws an error', () =>
         expect(service.bind(null)).to.throw('CouchDB options have to be provided')
@@ -54,8 +54,44 @@ describe('Feathers CouchDB Service', () => {
     });
   });
 
-  describe('CouchDB service example test', () => {
+  describe('CouchDB service example test:', () => {
     before(() => server);
+
+    describe('insert single data', () => {
+      it('should return data object', () => {
+        return app.service('tests').create({message:'test messages'})
+                  .then(obj => expect(typeof obj).to.equal('object'));
+      });
+    });
+
+    describe('insert multiple data', () => {
+      it('should return data array', () => {
+        return app.service('tests').create([{message:'test message'}, {message: 'another message'}])
+                  .then(obj => expect(Array.isArray(obj)).to.equal(true));
+      });
+    });
+
+    describe('query all documents from database', () => {
+      it('should return data array', () => {
+        return app.service('tests').find({query:{}})
+                  .then(obj => expect(Array.isArray(obj)).to.equal(true));
+      });
+    });
+
+    describe('find with key:value from database', () => {
+      it('should return data array', () => {
+        return app.service('tests').find({ query:{ message:'test message' } })
+                  .then(obj => expect(Array.isArray(obj)).to.equal(true));
+      });
+    });
+
+    describe('drop database', () => {
+      it('should return true', () => {
+          db = conn.database('tests');
+          db.destroy((err,res) => expect(res.ok).to.equal(true));
+      });
+    });
+    
     after(done => {
       server.then(s => s.close(() => done()));
     });
