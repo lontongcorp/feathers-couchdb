@@ -76,7 +76,7 @@ class Service {
         return '(' + retval.substr(4) + ')';
 
       } else if (id===key && typeof query !== 'object') {
-          return `doc.${id}=='${query}'`;
+          return `doc.${id}==${JSON.stringify(query)}`;
       } else {
           let arr = '';
           for (var k in query) {
@@ -133,8 +133,7 @@ class Service {
 
   find(params) {
     const self = this;
-    const paginate = (params && typeof params.paginate !== 'undefined') ?
-      params.paginate : this.paginate;
+    const paginate = (params && typeof params.paginate !== 'undefined') ? params.paginate : this.paginate;
 
     const q = params.query.q;
     let { filters, query } = filter(params.query|| {}, paginate);
