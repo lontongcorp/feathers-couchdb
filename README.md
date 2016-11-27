@@ -14,11 +14,11 @@ npm install cradle feathers-couchdb --save
 
 ## Documentation
 
-Please refer to the [cradle](https://github.com/flatiron/cradle) for more details about options for connection options and [Feathers database adapter documentation](http://docs.feathersjs.com/databases/readme.html) for more details about database adapter.
+Please refer to the [cradle](https://github.com/flatiron/cradle) for more details about connection options and [Feathers database adapter](http://docs.feathersjs.com/databases/readme.html).
 
 #### Getting Started
 
-Create CouchDB service like this:
+Create CouchDB service:
 
 ```js
 var cradle = require('cradle');
@@ -32,7 +32,7 @@ var Connection = new(cradle.Connection)(
     {
         secure: true,
         auth: {
-            username: '<user>',
+            username: 'user',
             password: '<pass>'
         },
         cache: true
@@ -112,7 +112,6 @@ can also add other params as well `$skip`, `$limit`, `$select`
 Please be aware this process slower than having saved design doc.
 
 ```js
-body
 {
     "$skip": 0,
     "$limit": 10,

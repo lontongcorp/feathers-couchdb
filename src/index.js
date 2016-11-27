@@ -42,7 +42,7 @@ class Service {
                     if (err.name === 'CouchError' && err.error === 'file_exists') {
                         return resolve(db);
                     }
-                    
+
                     return reject(err);
                 }
 
@@ -161,7 +161,7 @@ class Service {
                       const arr = filters.$select;
                       if (arr && Array.isArray(arr) && arr.length>0) {
                           let tmpData = {};
-                          
+
                           for (let j=0,N=arr.length; j<N; j++) {
                               tmpData[arr[j]] = res[i][arr[j]];
                           }
@@ -192,7 +192,7 @@ class Service {
                                 if (err) {
                                   return promisify(err, res);
                                 }
-                                
+
                                 db.remove('_design/feathers', obj.rev, err => promisify(err, res));
                             });
                         });
@@ -222,11 +222,10 @@ class Service {
   get(id, params) {
     return  this._get(id,params)
                 .then(res=>{
-                  let obj = JSON.parse(JSON.stringify(res));
-                  obj.id = obj._id;
+                  let obj = Object.assign({id: res._id}, res);
                   delete obj._id;
                   delete obj._rev;
-                  
+
                   return obj;
                 })
                 .catch(errorHandler);
@@ -244,7 +243,7 @@ class Service {
             entry[i] = Object.assign({}, data[i]);
         }
     }
-    
+
     // single doc insert
     else {
         if (data._id || data.id) {
@@ -264,11 +263,11 @@ class Service {
                     if (err) {
                         return reject(err);
                     }
-                    
+
                     entry.id = res.id;
                     resolve(entry);
                 };
-                
+
                 _id ? db.save(_id, entry, promisify) : db.save(entry, promisify);
 
               });
@@ -278,7 +277,7 @@ class Service {
 
   patch(id, data) {
       const self = this;
-      
+
       return this.db.then(db => {
         return new Promise((resolve,reject) => {
             if (data.id) { delete data.id; }
@@ -313,10 +312,12 @@ class Service {
 
   remove(id, params) {
     let promise;
+    params = params || {};
 
     if (!params.rev && !params._rev) {
         promise = this._get(id).then(doc => {
             params.rev = doc.rev || doc._rev;
+            return this.db;
         });
     } else {
         promise = this.db;
