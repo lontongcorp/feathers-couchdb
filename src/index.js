@@ -148,32 +148,41 @@ class Service {
                 };
 
                 let promisify = (err, res) => {
+                  let data = [];
+
                   if (err) {
-                      return reject(err);
+                    return reject(err);
                   }
 
                   for (let i=0,N=res.length; i<N; i++) {
-                      res[i] = res[i].value;
-                      res[i].id = res[i]._id;
-                      delete res[i]._id;
-                      delete res[i]._rev;
+										const arr = filters.$select;
+                    const rows = res.rows;
 
-                      const arr = filters.$select;
-                      if (arr && Array.isArray(arr) && arr.length>0) {
-                          let tmpData = {};
+                    data[i] = rows[i].value;
+                    data[i].id = rows[i].value._id;
+                    delete data[i]._id;
+                    delete data[i]._rev;
 
-                          for (let j=0,N=arr.length; j<N; j++) {
-                              tmpData[arr[j]] = res[i][arr[j]];
-                          }
-                          res[i] = tmpData;
+                    if (arr && Array.isArray(arr) && arr.length>0) {
+                      let tmpData = {};
+
+                      for (let j=0,N=arr.length; j<N; j++) {
+                        tmpData[arr[j]] = rows[i][arr[j]];
                       }
+                      data[i] = tmpData;
+                    }
                   }
 
-                  resolve(res);
+                  resolve({
+                    total: res.total_rows,
+                    limit: opts.limit,
+                    skip: res.offset,
+                    data: data
+                  });
                 };
 
                 if (q) {
-                    return db.view(q, opts, promisify);
+                  return db.view(q, opts, promisify);
                 }
 
                 const viewFn = self._createTempView(filters, query);
