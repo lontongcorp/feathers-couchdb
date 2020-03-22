@@ -1,4 +1,4 @@
-feathers-coucdb
+feathers-couchdb
 ================
 
 [![Build Status](https://travis-ci.org/lontongcorp/feathers-couchdb.png?branch=master)](https://travis-ci.org/lontongcorp/feathers-couchdb)
